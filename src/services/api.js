@@ -50,7 +50,9 @@ export const sessionsAPI = {
 // =======================
 export const contestsAPI = {
   getAll: () => api.get("/contests"),
+  getById: (contestId) => api.get(`/contests/${contestId}`),
   join: (contestId) => api.post(`/contests/${contestId}/join`),
+  getLeaderboard: (contestId) => api.get(`/contests/${contestId}/leaderboard`),
 };
 
 // =======================
@@ -67,6 +69,26 @@ export const coursesAPI = {
 // =======================
 export const activitiesAPI = {
   getAll: () => api.get("/activities"),
+};
+
+// =======================
+// Problems API
+// =======================
+export const problemsAPI = {
+  getById: (problemId) => api.get(`/problems/${problemId}`),
+};
+
+// =======================
+// Submissions API
+// =======================
+export const submissionsAPI = {
+  create: (submissionData) => api.post("/submissions", submissionData),
+  getUserSubmissions: (userId) => api.get(`/submissions/user/${userId}`),
+  getContestSubmissions: (contestId) =>
+    api.get(`/submissions/contest/${contestId}`),
+  runCode: (data) => api.post("/submissions/run", data),
+  getUserProblemSubmissions: (problemId, userId) =>
+    api.get(`/submissions/problem/${problemId}/user/${userId}`),
 };
 
 export default api;

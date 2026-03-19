@@ -13,6 +13,8 @@ import sessionsRoutes from "./routes/sessions.js";
 import contestsRoutes from "./routes/contests.js";
 import coursesRoutes from "./routes/courses.js";
 import activitiesRoutes from "./routes/activities.js";
+import problemsRoutes from "./routes/problems.js";
+import submissionsRoutes from "./routes/submissions.js";
 
 // ================= APP SETUP =================
 const app = express();
