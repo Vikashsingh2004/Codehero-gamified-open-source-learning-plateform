@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Trophy, Users, HelpCircle, Bell, LogOut, ChevronDown, Shield, User } from 'lucide-react';
+import { BookOpen, Trophy, Users, HelpCircle, Bell, LogOut, ChevronDown, Shield, User, Newspaper } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = ({ user, activeTab, onTabChange }) => {
@@ -12,6 +12,7 @@ const Navbar = ({ user, activeTab, onTabChange }) => {
     { id: 'mentorship', label: 'Mentorship', icon: Users },
     { id: 'contests', label: 'Contests', icon: Trophy },
     { id: 'courses', label: user.role === 'mentor' ? 'My Courses' : 'Courses', icon: BookOpen },
+    { id: 'blogs', label: 'Blog', icon: Newspaper },
   ];
 
   const avatarFallback = user.name?.charAt(0).toUpperCase() || 'U';

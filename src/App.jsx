@@ -7,6 +7,7 @@ import { Doubts } from './components/Doubts';
 import { Mentorship } from './components/Mentorship';
 import { Contests } from './components/Contests';
 import { Courses } from './components/Courses';
+import { Blogs } from './components/blog/Blogs';
 import LoginPage from './components/auth/LoginPage';
 import SignupPage from './components/auth/SignupPage';
 import { Loader } from 'lucide-react';
@@ -64,6 +65,8 @@ function App() {
         return <Contests currentUser={user} />;
       case 'courses':
         return <Courses currentUser={user} />;
+      case 'blogs':
+        return <Blogs currentUser={user} />;
       default:
         return <Dashboard user={user} activities={activities} />;
     }

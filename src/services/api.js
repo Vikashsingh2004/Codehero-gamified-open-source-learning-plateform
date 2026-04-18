@@ -92,6 +92,15 @@ export const problemsAPI = {
   getById: (problemId) => api.get(`/problems/${problemId}`),
 };
 
+export const blogsAPI = {
+  getAll: () => api.get("/blogs"),
+  getById: (blogId) => api.get(`/blogs/${blogId}`),
+  create: (data) => api.post("/blogs", data),
+  like: (blogId) => api.patch(`/blogs/${blogId}/like`),
+  dislike: (blogId) => api.patch(`/blogs/${blogId}/dislike`),
+  addComment: (blogId, text) => api.post(`/blogs/${blogId}/comments`, { text }),
+};
+
 export const submissionsAPI = {
   create: (submissionData) => api.post("/submissions", submissionData),
   getUserSubmissions: (userId) => api.get(`/submissions/user/${userId}`),

@@ -17,6 +17,7 @@ import coursesRoutes from "./routes/courses.js";
 import activitiesRoutes from "./routes/activities.js";
 import problemsRoutes from "./routes/problems.js";
 import courseSessionsRoutes from "./routes/courseSessions.js";
+import blogsRoutes from "./routes/blogs.js";
 
 // ================= APP SETUP =================
 const app = express();
@@ -129,6 +130,7 @@ app.use("/api/activities", activitiesRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/problems", problemsRoutes);
 app.use("/api/courses/:courseId/sessions", courseSessionsRoutes);
+app.use("/api/blogs", blogsRoutes);
 
 // ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
