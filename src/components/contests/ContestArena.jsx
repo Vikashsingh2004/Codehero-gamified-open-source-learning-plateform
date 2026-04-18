@@ -56,6 +56,7 @@ const ContestArena = ({ contest: initialContest, currentUser, onBack }) => {
   }, [contest._id]);
 
   useEffect(() => {
+    contestsAPI.enter(contest._id).catch(() => {});
     fetchMySubmissions();
     if (contest.problems?.length > 0) {
       setSelectedProblem(contest.problems[0]);

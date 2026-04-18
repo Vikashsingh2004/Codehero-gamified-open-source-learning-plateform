@@ -58,7 +58,19 @@ const Contests = ({ currentUser }) => {
   const handleEnter = async (contest) => {
     try {
       const res = await contestsAPI.getById(contest._id);
-      setActiveContest(res.data);
+      const freshContest = res.data;
+
+      if (freshContest.status === "live") {
+        const participant = freshContest.participants?.find(
+          (p) => (p.userId?._id || p.userId)?.toString() === currentUserId
+        );
+        if (participant?.hasEntered) {
+          alert("You have already entered this contest and cannot re-enter.");
+          return;
+        }
+      }
+
+      setActiveContest(freshContest);
     } catch {
       setActiveContest(contest);
     }

@@ -20,6 +20,8 @@ const participantSchema = new mongoose.Schema({
   submissions: [submissionSchema],
   rank: { type: Number, default: 0 },
   joinedAt: { type: Date, default: Date.now },
+  hasEntered: { type: Boolean, default: false },
+  enteredAt: { type: Date },
 });
 
 const contestSchema = new mongoose.Schema(

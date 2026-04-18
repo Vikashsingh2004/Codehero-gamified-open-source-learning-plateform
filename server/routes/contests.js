@@ -180,6 +180,40 @@ router.post("/:id/join", authMiddleware, async (req, res) => {
   }
 });
 
+router.post("/:id/enter", authMiddleware, async (req, res) => {
+  try {
+    const contest = await Contest.findById(req.params.id)
+      .populate("participants.userId", "name email avatar")
+      .populate("problems");
+    if (!contest) return res.status(404).json({ message: "Contest not found" });
+    syncStatus(contest);
+
+    if (contest.status !== "live") {
+      return res.status(403).json({ message: "Contest is not live." });
+    }
+
+    const participant = contest.participants.find(
+      (p) => (p.userId._id || p.userId).toString() === req.user._id.toString()
+    );
+
+    if (!participant) {
+      return res.status(403).json({ message: "You are not registered for this contest." });
+    }
+
+    if (participant.hasEntered) {
+      return res.status(403).json({ message: "You have already entered this contest and cannot re-enter." });
+    }
+
+    participant.hasEntered = true;
+    participant.enteredAt = new Date();
+    await contest.save();
+
+    res.json(contest);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.post("/:id/submit", authMiddleware, async (req, res) => {
   try {
     const contest = await Contest.findById(req.params.id).populate("problems");

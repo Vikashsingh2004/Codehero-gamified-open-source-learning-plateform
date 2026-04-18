@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Calendar, Clock, Users, Code, Trophy, Zap, Timer } from "lucide-react";
+import { Calendar, Clock, Users, Code, Trophy, Zap, Timer, Lock } from "lucide-react";
 
 const difficultyStyles = {
   beginner: "text-green-700 bg-green-100",
@@ -34,9 +34,11 @@ function useCountdown(targetDate) {
 }
 
 const ContestCard = ({ contest, currentUserId, onJoin, onEnter, joinLoading }) => {
-  const isRegistered = contest.participants?.some(
+  const myParticipant = contest.participants?.find(
     (p) => (p.userId?._id || p.userId)?.toString() === currentUserId
   );
+  const isRegistered = !!myParticipant;
+  const hasEntered = myParticipant?.hasEntered === true;
   const countdown = useCountdown(contest.status === "upcoming" ? contest.startTime : contest.endTime);
   const durationMs = new Date(contest.endTime) - new Date(contest.startTime);
   const durationH = Math.floor(durationMs / 3600000);
@@ -131,13 +133,20 @@ const ContestCard = ({ contest, currentUserId, onJoin, onEnter, joinLoading }) =
                   Registered
                 </span>
                 {contest.status === "live" ? (
-                  <button
-                    onClick={() => onEnter(contest)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
-                  >
-                    <Zap className="w-3.5 h-3.5" />
-                    Enter
-                  </button>
+                  hasEntered ? (
+                    <span className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-500 rounded-lg text-sm font-medium border border-gray-200 cursor-not-allowed">
+                      <Lock className="w-3.5 h-3.5" />
+                      Already Entered
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => onEnter(contest)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      Enter
+                    </button>
+                  )
                 ) : (
                   <span className="text-xs text-gray-400">Waiting for contest to go live</span>
                 )}
