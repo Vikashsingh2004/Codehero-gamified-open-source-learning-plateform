@@ -82,6 +82,12 @@ export const activitiesAPI = {
   getAll: () => api.get("/activities"),
 };
 
+export const courseSessionsAPI = {
+  getAll: (courseId) => api.get(`/courses/${courseId}/sessions`),
+  create: (courseId, sessionData) => api.post(`/courses/${courseId}/sessions`, sessionData),
+  join: (courseId, sessionId) => api.patch(`/courses/${courseId}/sessions/join/${sessionId}`),
+};
+
 export const problemsAPI = {
   getById: (problemId) => api.get(`/problems/${problemId}`),
 };
