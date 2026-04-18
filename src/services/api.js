@@ -68,6 +68,11 @@ export const contestsAPI = {
   create: (contestData) => api.post("/contests", contestData),
   join: (contestId) => api.post(`/contests/${contestId}/join`),
   getLeaderboard: (contestId) => api.get(`/contests/${contestId}/leaderboard`),
+  addProblem: (contestId, problemData) => api.post(`/contests/${contestId}/problems`, problemData),
+  deleteProblem: (contestId, problemId) => api.delete(`/contests/${contestId}/problems/${problemId}`),
+  submit: (contestId, data) => api.post(`/contests/${contestId}/submit`, data),
+  run: (contestId, data) => api.post(`/contests/${contestId}/run`, data),
+  getMySubmissions: (contestId) => api.get(`/contests/${contestId}/my-submissions`),
 };
 
 export const coursesAPI = {
