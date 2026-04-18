@@ -1,12 +1,14 @@
-// ================= IMPORT PACKAGES =================
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import aiRoutes from "./routes/ai.js";
+import authRoutes from "./routes/auth.js";
 
-// ================= IMPORT ROUTES =================
+dotenv.config();
+
 import usersRoutes from "./routes/users.js";
 import doubtsRoutes from "./routes/doubts.js";
 import sessionsRoutes from "./routes/sessions.js";
@@ -14,7 +16,6 @@ import contestsRoutes from "./routes/contests.js";
 import coursesRoutes from "./routes/courses.js";
 import activitiesRoutes from "./routes/activities.js";
 import problemsRoutes from "./routes/problems.js";
-import submissionsRoutes from "./routes/submissions.js";
 
 // ================= APP SETUP =================
 const app = express();
@@ -108,7 +109,7 @@ app.use(express.json());
 // ================= MONGODB =================
 async function main() {
   try {
-    await mongoose.connect("mongodb://127.0.0.1:27017/Codehero");
+    await mongoose.connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/Codehero");
     console.log("✅ Connected to MongoDB");
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
@@ -117,6 +118,7 @@ async function main() {
 main();
 
 // ================= API ROUTES =================
+app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/doubts", doubtsRoutes);
 app.use("/api/sessions", sessionsRoutes);
@@ -124,6 +126,7 @@ app.use("/api/contests", contestsRoutes);
 app.use("/api/courses", coursesRoutes);
 app.use("/api/activities", activitiesRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/problems", problemsRoutes);
 
 // ================= START SERVER =================
 const PORT = process.env.PORT || 5000;

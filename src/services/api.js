@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api"; // Make sure backend runs here
+const API_BASE_URL = "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -9,18 +9,42 @@ const api = axios.create({
   },
 });
 
-// =======================
-// User API
-// =======================
-export const userAPI = {
-  getCurrentUser: () => api.get("/users/me"),
-  toggleRole: () => api.put("/users/toggle-role"),
-  updateExperience: (points) => api.put("/users/update-experience", { points }),
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const authAPI = {
+  signup: (data) => api.post("/auth/signup", data),
+  login: (data) => api.post("/auth/login", data),
+  logout: () => api.post("/auth/logout"),
+  getMe: () => api.get("/auth/me"),
+  promoteUser: (userId) => api.put(`/auth/promote/${userId}`),
 };
 
-// =======================
-// Doubts API
-// =======================
+export const userAPI = {
+  getCurrentUser: () => api.get("/users/me"),
+  updateExperience: (points) => api.put("/users/update-experience", { points }),
+  getAllUsers: () => api.get("/users/all"),
+};
+
 export const doubtsAPI = {
   getAll: () => api.get("/doubts"),
   create: (doubtData) => api.post("/doubts", doubtData),
@@ -28,59 +52,40 @@ export const doubtsAPI = {
     api.post(`/doubts/${doubtId}/solutions`, solutionData),
 };
 
-// =======================
-// AI API
-// =======================
 export const aiAPI = {
   ask: (prompt) => api.post("/ai", { prompt }),
 };
 
-// =======================
-// Sessions API
-// =======================
 export const sessionsAPI = {
   getAll: () => api.get("/sessions"),
   create: (sessionData) => api.post("/sessions", sessionData),
-  join: (sessionId, userId) =>
-    api.patch(`/sessions/join/${sessionId}`, { userId }),
+  join: (sessionId) => api.patch(`/sessions/join/${sessionId}`),
 };
 
-// =======================
-// Contests API
-// =======================
 export const contestsAPI = {
   getAll: () => api.get("/contests"),
   getById: (contestId) => api.get(`/contests/${contestId}`),
+  create: (contestData) => api.post("/contests", contestData),
   join: (contestId) => api.post(`/contests/${contestId}/join`),
   getLeaderboard: (contestId) => api.get(`/contests/${contestId}/leaderboard`),
 };
 
-// =======================
-// Courses API
-// =======================
 export const coursesAPI = {
   getAll: () => api.get("/courses"),
+  getById: (courseId) => api.get(`/courses/${courseId}`),
   create: (courseData) => api.post("/courses", courseData),
+  enroll: (courseId) => api.post(`/courses/${courseId}/enroll`),
   delete: (courseId) => api.delete(`/courses/${courseId}`),
 };
 
-// =======================
-// Activities API
-// =======================
 export const activitiesAPI = {
   getAll: () => api.get("/activities"),
 };
 
-// =======================
-// Problems API
-// =======================
 export const problemsAPI = {
   getById: (problemId) => api.get(`/problems/${problemId}`),
 };
 
-// =======================
-// Submissions API
-// =======================
 export const submissionsAPI = {
   create: (submissionData) => api.post("/submissions", submissionData),
   getUserSubmissions: (userId) => api.get(`/submissions/user/${userId}`),

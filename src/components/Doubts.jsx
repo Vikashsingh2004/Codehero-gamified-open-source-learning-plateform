@@ -12,9 +12,7 @@ import {
 import { doubtsAPI, aiAPI } from "../services/api";
 import AiAssistant from "./AiAssistant";
 
-const CURRENT_USER_ID = "1"; // Replace with real auth ID if available
-
-export const Doubts = ({ doubts, setDoubts, updateUser }) => {
+export const Doubts = ({ doubts, setDoubts }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedDoubt, setSelectedDoubt] = useState(null);
   const [showAI, setShowAI] = useState(false);

@@ -1,12 +1,12 @@
 import express from "express";
 import Course from "../models/Course.js";
-import User from "../models/User.js";
 import Activity from "../models/Activity.js";
+import User from "../models/User.js";
+import { authMiddleware, mentorOnlyMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
 
-/* 🟢 Get all courses */
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const courses = await Course.find()
       .populate("createdBy", "name email avatar")
@@ -19,8 +19,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-/* 🟢 Get single course by ID */
-router.get("/:id", async (req, res) => {
+router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const course = await Course.findById(req.params.id)
       .populate("createdBy", "name email avatar")
@@ -37,28 +36,20 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* 🟢 Create a new course */
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, mentorOnlyMiddleware, async (req, res) => {
   try {
-    const { title, description, difficulty, duration, price, thumbnail } =
-      req.body;
-
-    // Simulated user (replace later with real authentication)
-    const user = await User.findOne({ email: "vikash@codehero.dev" });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    const { title, description, difficulty, duration, price, thumbnail } = req.body;
 
     const course = new Course({
       title,
       description,
-      createdBy: user._id,
+      createdBy: req.user._id,
       thumbnail:
         thumbnail ||
         "https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=400",
-      difficulty,
-      duration: parseInt(duration),
-      price: parseFloat(price),
+      difficulty: difficulty || "beginner",
+      duration: parseInt(duration) || 1,
+      price: parseFloat(price) || 0,
       chapters: [],
       enrolledUsers: [],
       rating: 0,
@@ -68,9 +59,8 @@ router.post("/", async (req, res) => {
     await course.save();
     await course.populate("createdBy", "name email avatar");
 
-    // Log activity
     const activity = new Activity({
-      userId: user._id,
+      userId: req.user._id,
       type: "course_created",
       description: `Created course: ${title}`,
       points: 100,
@@ -78,10 +68,9 @@ router.post("/", async (req, res) => {
     });
     await activity.save();
 
-    // Update user XP
-    user.experience += 100;
-    user.contributionPoints += 100;
-    await user.save();
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { experience: 100, contributionPoints: 100 },
+    });
 
     res.status(201).json(course);
   } catch (error) {
@@ -90,12 +79,37 @@ router.post("/", async (req, res) => {
   }
 });
 
-/* 🟢 Delete a course (auth disabled for testing) */
-router.delete("/:id", async (req, res) => {
+router.post("/:id/enroll", authMiddleware, async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).json({ message: "Course not found" });
+
+    const userId = req.user._id;
+    const alreadyEnrolled = course.enrolledUsers.some(
+      (id) => id.toString() === userId.toString()
+    );
+
+    if (!alreadyEnrolled) {
+      course.enrolledUsers.push(userId);
+      await course.save();
+    }
+
+    await course.populate("createdBy", "name email avatar");
+    res.json(course);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to enroll in course" });
+  }
+});
+
+router.delete("/:id", authMiddleware, mentorOnlyMiddleware, async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
+    }
+
+    if (course.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to delete this course" });
     }
 
     await Course.findByIdAndDelete(req.params.id);
