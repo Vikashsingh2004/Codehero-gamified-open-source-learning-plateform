@@ -110,20 +110,27 @@ const ContestCard = ({ contest, currentUserId, onJoin, onEnter, joinLoading }) =
             {contest.difficulty}
           </span>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             {contest.status === "ended" ? (
-              <button
-                onClick={() => onEnter(contest)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition-colors"
-              >
-                View Results
-              </button>
+              isRegistered ? (
+                <button
+                  onClick={() => onEnter(contest)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition-colors"
+                >
+                  View Results
+                </button>
+              ) : (
+                <span className="px-3 py-2 text-gray-400 text-sm font-medium">
+                  Contest Ended
+                </span>
+              )
             ) : isRegistered ? (
-              <div className="flex gap-2">
-                <span className="px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
+              <div className="flex gap-2 items-center">
+                <span className="flex items-center gap-1.5 px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium border border-green-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
                   Registered
                 </span>
-                {contest.status === "live" && (
+                {contest.status === "live" ? (
                   <button
                     onClick={() => onEnter(contest)}
                     className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
@@ -131,18 +138,22 @@ const ContestCard = ({ contest, currentUserId, onJoin, onEnter, joinLoading }) =
                     <Zap className="w-3.5 h-3.5" />
                     Enter
                   </button>
+                ) : (
+                  <span className="text-xs text-gray-400">Waiting for contest to go live</span>
                 )}
               </div>
+            ) : contest.status === "live" ? (
+              <button
+                onClick={() => onJoin(contest._id)}
+                disabled={joinLoading === contest._id}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors disabled:opacity-60"
+              >
+                {joinLoading === contest._id ? "Joining..." : "Join & Enter"}
+              </button>
             ) : (
               <button
-                onClick={() => {
-                  if (contest.status !== "upcoming" && contest.status !== "live") {
-                    alert("Contest is not live yet or has already ended.");
-                    return;
-                  }
-                  onJoin(contest._id);
-                }}
-                disabled={joinLoading === contest._id}
+                onClick={() => onJoin(contest._id)}
+                disabled={joinLoading === contest._id || contest.status !== "upcoming"}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors disabled:opacity-60"
               >
                 {joinLoading === contest._id ? "Joining..." : "Register"}

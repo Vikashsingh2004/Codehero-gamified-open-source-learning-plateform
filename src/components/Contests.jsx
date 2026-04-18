@@ -37,9 +37,19 @@ const Contests = ({ currentUser }) => {
     try {
       setJoinLoading(contestId);
       const res = await contestsAPI.join(contestId);
-      setContests((prev) => prev.map((c) => (c._id === contestId ? res.data : c)));
+      const updated = res.data;
+      setContests((prev) => prev.map((c) => (c._id === contestId ? updated : c)));
+      if (updated.status === "live") {
+        setActiveContest(updated);
+      }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to join contest");
+      const msg = err.response?.data?.message || "Failed to join contest";
+      if (err.response?.status === 400 && msg.includes("already joined")) {
+        const res = await contestsAPI.getById(contestId);
+        setContests((prev) => prev.map((c) => (c._id === contestId ? res.data : c)));
+      } else {
+        alert(msg);
+      }
     } finally {
       setJoinLoading(null);
     }

@@ -154,23 +154,25 @@ router.post("/:id/join", authMiddleware, async (req, res) => {
       (p) => (p.userId._id || p.userId).toString() === req.user._id.toString()
     );
 
-    if (!alreadyJoined) {
-      contest.participants.push({ userId: req.user._id, score: 0, submissions: [] });
-      await contest.save();
-      await contest.populate("participants.userId", "name email avatar");
-
-      await Activity.create({
-        userId: req.user._id,
-        type: "contest_participated",
-        description: `Registered for contest: ${contest.title}`,
-        points: 10,
-        relatedId: contest._id,
-      });
-
-      await User.findByIdAndUpdate(req.user._id, {
-        $inc: { experience: 10, contributionPoints: 10 },
-      });
+    if (alreadyJoined) {
+      return res.status(400).json({ message: "You have already joined this contest." });
     }
+
+    contest.participants.push({ userId: req.user._id, score: 0, submissions: [], joinedAt: new Date() });
+    await contest.save();
+    await contest.populate("participants.userId", "name email avatar");
+
+    await Activity.create({
+      userId: req.user._id,
+      type: "contest_participated",
+      description: `Registered for contest: ${contest.title}`,
+      points: 10,
+      relatedId: contest._id,
+    });
+
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { experience: 10, contributionPoints: 10 },
+    });
 
     res.json(contest);
   } catch (error) {
@@ -185,6 +187,13 @@ router.post("/:id/submit", authMiddleware, async (req, res) => {
     syncStatus(contest);
     if (contest.status !== "live") {
       return res.status(403).json({ message: "Contest is not live. Submissions are closed." });
+    }
+
+    const isRegistered = contest.participants.some(
+      (p) => p.userId.toString() === req.user._id.toString()
+    );
+    if (!isRegistered) {
+      return res.status(403).json({ message: "You are not registered for this contest." });
     }
 
     const { problemId, code, language } = req.body;
