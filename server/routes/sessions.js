@@ -1,17 +1,33 @@
 import express from "express";
 import Session from "../models/Session.js";
 import Activity from "../models/Activity.js";
-import { authMiddleware, mentorOnlyMiddleware } from "../middleware/auth.js";
+import User from "../models/User.js";
+import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
+
+function enrichWithStatus(session) {
+  const obj = session.toObject ? session.toObject() : { ...session };
+  obj.id = obj._id?.toString() || obj.id;
+  obj.status = session.computeStatus ? session.computeStatus() : computeStatus(obj);
+  return obj;
+}
+
+function computeStatus(session) {
+  const now = new Date();
+  const start = new Date(session.scheduledAt);
+  const end = new Date(session.endTime);
+  if (now < start) return "upcoming";
+  if (now >= start && now <= end) return "live";
+  return "expired";
+}
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const sessions = await Session.find().sort({ scheduledAt: 1 });
-    const formatted = sessions.map((s) => ({
-      ...s.toObject(),
-      id: s._id.toString(),
-    }));
+    const formatted = sessions
+      .map(enrichWithStatus)
+      .filter((s) => s.status !== "expired");
     res.json(formatted);
   } catch (err) {
     console.error(err);
@@ -19,7 +35,7 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-router.post("/", authMiddleware, mentorOnlyMiddleware, async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
     const { title, description, scheduledAt, duration, capacity, tags } = req.body;
 
@@ -27,13 +43,18 @@ router.post("/", authMiddleware, mentorOnlyMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    const durationMinutes = Number(duration) || 60;
+    const startDate = new Date(scheduledAt);
+    const endDate = new Date(startDate.getTime() + durationMinutes * 60 * 1000);
+
     const session = new Session({
       title,
       description,
-      mentorId: req.user._id.toString(),
-      mentorName: req.user.name,
-      scheduledAt: new Date(scheduledAt),
-      duration: Number(duration) || 60,
+      hostId: req.user._id.toString(),
+      hostName: req.user.name,
+      scheduledAt: startDate,
+      endTime: endDate,
+      duration: durationMinutes,
       capacity: Number(capacity) || 20,
       attendees: [req.user._id.toString()],
       tags: tags || [],
@@ -46,12 +67,16 @@ router.post("/", authMiddleware, mentorOnlyMiddleware, async (req, res) => {
       userId: req.user._id,
       type: "session_hosted",
       description: `Hosted session: ${title}`,
-      points: 50,
+      points: 20,
       relatedId: session._id,
     });
     await activity.save();
 
-    res.status(201).json({ ...session.toObject(), id: session._id.toString() });
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: { experience: 20, contributionPoints: 20 },
+    });
+
+    res.status(201).json(enrichWithStatus(session));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to create session" });
@@ -62,6 +87,12 @@ router.patch("/join/:id", authMiddleware, async (req, res) => {
   try {
     const session = await Session.findById(req.params.id);
     if (!session) return res.status(404).json({ error: "Session not found" });
+
+    const currentStatus = session.computeStatus();
+
+    if (currentStatus !== "live") {
+      return res.status(400).json({ message: "Meeting is not live yet or has already ended." });
+    }
 
     const userId = req.user._id.toString();
 
@@ -79,7 +110,7 @@ router.patch("/join/:id", authMiddleware, async (req, res) => {
       await activity.save();
     }
 
-    res.json({ ...session.toObject(), id: session._id.toString() });
+    res.json(enrichWithStatus(session));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to join session" });
