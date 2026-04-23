@@ -32,7 +32,10 @@ api.interceptors.response.use(
 );
 
 export const authAPI = {
-  signup: (data) => api.post("/auth/signup", data),
+  signup: (data) => {
+    console.log("Calling:", `${BASE_URL}/api/auth/signup`);
+    return api.post("/auth/signup", data);
+  },
   login: (data) => api.post("/auth/login", data),
   logout: () => api.post("/auth/logout"),
   getMe: () => api.get("/auth/me"),

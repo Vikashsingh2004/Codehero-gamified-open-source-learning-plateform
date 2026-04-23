@@ -44,12 +44,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const signup = async (name, email, password) => {
-    const response = await authAPI.signup({ name, email, password });
-    const { token: newToken, user: newUser } = response.data;
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-    setUser(newUser);
-    return newUser;
+    try {
+      const response = await authAPI.signup({ name, email, password });
+      const { token: newToken, user: newUser } = response.data;
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
+      setUser(newUser);
+      return newUser;
+    } catch (err) {
+      console.error("Signup failed:", err.response?.data?.message || err.message);
+      throw err;
+    }
   };
 
   const updateUser = (updatedUser) => {
