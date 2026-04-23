@@ -1,6 +1,7 @@
 // src/components/VideoCall.jsx
 import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
+import BASE_URL from "../config/api.js";
 import {
   Video,
   VideoOff,
@@ -11,7 +12,6 @@ import {
   Share2,
 } from "lucide-react";
 
-const SIGNALING_SERVER_URL = "http://localhost:5000";
 const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
 
 export const VideoCall = ({ sessionId, isHost = false, onLeave }) => {
@@ -48,7 +48,7 @@ export const VideoCall = ({ sessionId, isHost = false, onLeave }) => {
       localStreamRef.current = stream;
       localVideoRef.current.srcObject = stream;
 
-      socketRef.current = io(SIGNALING_SERVER_URL);
+      socketRef.current = io(BASE_URL);
 
       socketRef.current.on("connect", () => {
         socketRef.current.emit("join-room", sessionId);
