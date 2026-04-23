@@ -22,7 +22,7 @@ import blogsRoutes from "./routes/blogs.js";
 // ================= ALLOWED ORIGINS =================
 const ALLOWED_ORIGINS = [
   "http://localhost:5173",
-  "https://codehero-gamified-open-source-learn-eight.vercel.app",
+  "https://codeheroo.netlify.app",
 ];
 
 function isOriginAllowed(origin) {
