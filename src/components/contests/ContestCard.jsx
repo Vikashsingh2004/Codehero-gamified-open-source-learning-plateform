@@ -117,11 +117,11 @@ function LeaderboardModal({ contestId, contestTitle, onClose }) {
                     )}
                   </div>
                   <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm flex-shrink-0">
-                    {entry.name?.charAt(0)?.toUpperCase() || "?"}
+                    {(entry.userId?.name || entry.name || "?").charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm truncate">{entry.name || "Anonymous"}</p>
-                    <p className="text-xs text-gray-400">{entry.solvedCount ?? 0} solved</p>
+                    <p className="font-semibold text-gray-900 text-sm truncate">{entry.userId?.name || entry.name || "Anonymous"}</p>
+                    <p className="text-xs text-gray-400">{entry.problemsSolved ?? entry.solvedCount ?? 0} solved</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="font-bold text-gray-900">{entry.score ?? 0}</p>

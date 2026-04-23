@@ -56,11 +56,23 @@ const ContestArena = ({ contest: initialContest, currentUser, onBack }) => {
   }, [contest._id]);
 
   useEffect(() => {
+    const loadContest = async () => {
+      try {
+        const res = await contestsAPI.getById(contest._id);
+        const fresh = res.data;
+        setContest(fresh);
+        if (fresh.problems?.length > 0) {
+          setSelectedProblem(fresh.problems[0]);
+        }
+      } catch {
+        if (contest.problems?.length > 0) {
+          setSelectedProblem(contest.problems[0]);
+        }
+      }
+    };
     contestsAPI.enter(contest._id).catch(() => {});
     fetchMySubmissions();
-    if (contest.problems?.length > 0) {
-      setSelectedProblem(contest.problems[0]);
-    }
+    loadContest();
   }, []);
 
   const handleSubmitSuccess = () => {

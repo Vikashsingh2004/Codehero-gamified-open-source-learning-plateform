@@ -37,7 +37,8 @@ const Contests = ({ currentUser }) => {
     try {
       setJoinLoading(contestId);
       const res = await contestsAPI.join(contestId);
-      const updated = res.data;
+      const fullRes = await contestsAPI.getById(contestId);
+      const updated = fullRes.data;
       setContests((prev) => prev.map((c) => (c._id === contestId ? updated : c)));
       if (updated.status === "live") {
         setActiveContest(updated);
