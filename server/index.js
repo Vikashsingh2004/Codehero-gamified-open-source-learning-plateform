@@ -19,77 +19,83 @@ import problemsRoutes from "./routes/problems.js";
 import courseSessionsRoutes from "./routes/courseSessions.js";
 import blogsRoutes from "./routes/blogs.js";
 
+// ================= ALLOWED ORIGINS =================
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "https://codehero-gamified-open-source-learn-eight.vercel.app",
+];
+
+function isOriginAllowed(origin) {
+  if (!origin) return false;
+  return ALLOWED_ORIGINS.includes(origin);
+}
+
 // ================= APP SETUP =================
 const app = express();
 const httpServer = createServer(app);
 
+app.set("trust proxy", 1);
+
 // ================= SOCKET.IO SETUP =================
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // frontend URL in production
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by Socket.io CORS policy"));
+      }
+    },
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
 // ================= WEBRTC ROOMS STORE =================
-const rooms = {}; // { roomId: [socketId, socketId] }
+const rooms = {};
 
 // ================= SOCKET.IO EVENTS =================
 io.on("connection", (socket) => {
-  console.log("🟢 Socket connected:", socket.id);
+  console.log("Socket connected:", socket.id);
 
-  // ---------- JOIN ROOM ----------
   socket.on("join-room", (roomId) => {
     socket.join(roomId);
 
     if (!rooms[roomId]) rooms[roomId] = [];
     rooms[roomId].push(socket.id);
 
-    // Send existing users to new user
     const otherUsers = rooms[roomId].filter((id) => id !== socket.id);
     socket.emit("all-users", otherUsers);
 
-    // Notify others in room
     socket.to(roomId).emit("user-joined", socket.id);
-
-    console.log(`📥 ${socket.id} joined room ${roomId}`);
   });
 
-  // ---------- OFFER ----------
   socket.on("offer", ({ target, caller, sdp }) => {
     io.to(target).emit("offer", { caller, sdp });
   });
 
-  // ---------- ANSWER ----------
   socket.on("answer", ({ target, caller, sdp }) => {
     io.to(target).emit("answer", { caller, sdp });
   });
 
-  // ---------- ICE CANDIDATE ----------
   socket.on("ice-candidate", ({ target, candidate }) => {
-    io.to(target).emit("ice-candidate", {
-      from: socket.id,
-      candidate,
-    });
+    io.to(target).emit("ice-candidate", { from: socket.id, candidate });
   });
 
-  // ---------- LEAVE ROOM ----------
   socket.on("leave-room", (roomId) => {
     if (rooms[roomId]) {
       rooms[roomId] = rooms[roomId].filter((id) => id !== socket.id);
       socket.to(roomId).emit("user-left", socket.id);
 
       if (rooms[roomId].length === 0) {
-        delete rooms[roomId]; // cleanup empty rooms
+        delete rooms[roomId];
       }
     }
     socket.leave(roomId);
-    console.log(`📤 ${socket.id} left room ${roomId}`);
   });
 
-  // ---------- DISCONNECT ----------
   socket.on("disconnect", () => {
-    console.log("🔴 Socket disconnected:", socket.id);
+    console.log("Socket disconnected:", socket.id);
 
     for (const roomId in rooms) {
       if (rooms[roomId].includes(socket.id)) {
@@ -105,19 +111,17 @@ io.on("connection", (socket) => {
 });
 
 // ================= MIDDLEWARE =================
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS policy"));
+    }
+  },
+  credentials: true,
+}));
 app.use(express.json());
-
-// ================= MONGODB =================
-async function main() {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/Codehero");
-    console.log("✅ Connected to MongoDB");
-  } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
-  }
-}
-main();
 
 // ================= API ROUTES =================
 app.use("/api/auth", authRoutes);
@@ -133,7 +137,25 @@ app.use("/api/courses/:courseId/sessions", courseSessionsRoutes);
 app.use("/api/blogs", blogsRoutes);
 
 // ================= START SERVER =================
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+async function startServer() {
+  const MONGODB_URI = process.env.MONGODB_URI;
+  if (!MONGODB_URI) {
+    console.error("FATAL: MONGODB_URI environment variable is not set. Server cannot start.");
+    process.exit(1);
+  }
+
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log("Connected to MongoDB");
+  } catch (err) {
+    console.error("MongoDB connection error:", err.message);
+    process.exit(1);
+  }
+
+  const PORT = process.env.PORT || 5000;
+  httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+startServer();
